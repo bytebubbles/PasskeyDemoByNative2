@@ -15,6 +15,8 @@ import com.example.passkeydemobynative2.api.RegistrationFinishRequest
 import com.example.passkeydemobynative2.api.RegistrationStartRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class PasskeysManager(private val context: Context) {
     
@@ -36,11 +38,68 @@ class PasskeysManager(private val context: Context) {
                         Exception("获取注册选项失败: ${startResponse.message()}")
                     )
                 }
+                startResponse.body()!!.options.getAsJsonObject("authenticatorSelection").remove("authenticatorAttachment")
+                startResponse.body()!!.options.addProperty("attestation", "direct")
                 Log.d("ddddd", "register: ${startResponse.body()!!.options}")
                 val optionsJson = startResponse.body()!!.options.toString()
-                
+                val optionsJson2 = """{
+  "rp": {
+    "name": "Passkeys Demo Server",
+    "id": "nonresilient-boundedly-aleta.ngrok-free.dev"
+  },
+  "user": {
+    "name": "name5",
+    "displayName": "showName5",
+    "id": "jZiySf1PuQ7ALmAPbC0DSeOotnYq0Q0sXq338pwG1cg"
+  },
+  "challenge": "woPq9PqVq-67R3DbUbxDK4R8tREajkt2_wnuJ0F9lKw",
+  "pubKeyCredParams": [
+    {"alg": -7, "type": "public-key"}
+  ],
+  "excludeCredentials":[],
+  "authenticatorSelection": {
+    "residentKey": "required",
+    "userVerification": "required"
+  },
+  "attestation": "direct",
+  "extensions": {
+    "credProps": true
+  }
+}
+"""
+                var optionsJson3 = """{
+    "rp": {
+        "name": "Passkeys Demo Server",
+        "id": "nonresilient-boundedly-aleta.ngrok-free.dev"
+    },
+    "user": {
+        "name": "name",
+        "displayName": "showname5",
+        "id": "yGmIhbSD1HxouATwd-74pkmniQjWtK-LfbRDWYd110s"
+    },
+    "challenge": "0TTV9s_8-eUnu1GZaZw0kLS4XjkZm8bqnnE5AsOQK48",
+    "pubKeyCredParams": [
+        {"alg": -7, "type": "public-key"}
+    ],
+    "timeout": null,
+    "excludeCredentials": [
+
+    ],
+    "authenticatorSelection": {
+        "requireResidentKey": true,
+        "residentKey": "required",
+        "userVerification": "required"
+    },
+    "attestation": "direct",
+    "extensions": {
+        "appidExclude": null,
+        "credProps": true,
+        "largeBlob": null
+    }
+}"""
+
                 // 2. 使用 Credential Manager 创建凭证
-                val createRequest = CreatePublicKeyCredentialRequest(optionsJson)
+                val createRequest = CreatePublicKeyCredentialRequest(optionsJson, preferImmediatelyAvailableCredentials=false)
                 val credential = withContext(Dispatchers.Main) {
                     credentialManager.createCredential(
                         request = createRequest,
@@ -49,11 +108,16 @@ class PasskeysManager(private val context: Context) {
                 }
                 
                 // 3. 将凭证发送到服务器完成注册
+                val rawJson = """
+                {
+                  "username": "$username",
+                  "credential": ${credential.registrationResponseJson}
+                }
+                """.trimIndent()
+
+                val requestBody = rawJson.toRequestBody("application/json".toMediaType())
                 val finishResponse = ApiClient.passkeysApi.finishRegistration(
-                    RegistrationFinishRequest(
-                        username = username,
-                        credential = credential.registrationResponseJson
-                    )
+                    requestBody
                 )
                 
                 if (!finishResponse.isSuccessful || finishResponse.body()?.success != true) {

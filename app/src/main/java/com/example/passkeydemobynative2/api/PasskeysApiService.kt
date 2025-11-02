@@ -1,6 +1,7 @@
 package com.example.passkeydemobynative2.api
 
 import com.google.gson.JsonObject
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -12,11 +13,17 @@ interface PasskeysApiService {
         @Body request: RegistrationStartRequest
     ): Response<RegistrationStartResponse>
     
-    @POST("passkeys/register/finish")
+//    @POST("passkeys/register/finish")
+//    suspend fun finishRegistration(
+//        @Body request: RegistrationFinishRequest
+//    ): Response<RegistrationFinishResponse>
+
+     @POST("passkeys/register/finish")
     suspend fun finishRegistration(
-        @Body request: RegistrationFinishRequest
+         @Body body: RequestBody
     ): Response<RegistrationFinishResponse>
-    
+
+
     @POST("passkeys/authenticate/start")
     suspend fun startAuthentication(
         @Body request: AuthenticationStartRequest
@@ -41,7 +48,7 @@ data class RegistrationStartResponse(
 
 data class RegistrationFinishRequest(
     val username: String,
-    val credential: String // JSON 字符串
+    val credential: JsonObject // JSON 字符串
 )
 
 data class RegistrationFinishResponse(

@@ -36,6 +36,8 @@ class MainActivity : AppCompatActivity() {
         
         // 注册按钮点击事件
         registerButton.setOnClickListener {
+//            usernameInput.setText("dddd")
+//            displayNameInput.setText("showdddd")
             val username = usernameInput.text.toString()
             val displayName = displayNameInput.text.toString()
             
