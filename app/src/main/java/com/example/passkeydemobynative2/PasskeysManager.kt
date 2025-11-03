@@ -6,6 +6,7 @@ import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetPasswordOption
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.credentials.PublicKeyCredential
 import com.example.passkeydemobynative2.api.ApiClient
@@ -151,13 +152,24 @@ class PasskeysManager(private val context: Context) {
                         Exception("获取认证选项失败: ${startResponse.message()}")
                     )
                 }
-                
+                startResponse.body()!!.options.removeNullFields(recursive=true)
                 val optionsJson = startResponse.body()!!.options.toString()
-                
+
+                val optionsJson2 = """{
+    "challenge" : "mpYlRBDHyhbUuDLNZ-Xd5BxGBHnu7rQ1W5kmGvG-s6Q",
+    "rpId" : "nonresilient-boundedly-aleta.ngrok-free.dev",
+    
+    "userVerification" : "required",
+    "extensions" : {
+      "appid" : null
+    }
+  }"""
+                Log.d("TAG", "authenticate: $optionsJson")
                 // 2. 使用 Credential Manager 获取凭证
                 val getPublicKeyCredentialOption = GetPublicKeyCredentialOption(optionsJson)
+                val getPasswordOption = GetPasswordOption()
                 val getCredRequest = GetCredentialRequest(
-                    listOf(getPublicKeyCredentialOption)
+                    listOf(getPublicKeyCredentialOption,getPasswordOption)
                 )
                 
                 val credential = withContext(Dispatchers.Main) {
@@ -169,10 +181,13 @@ class PasskeysManager(private val context: Context) {
                 }
                 
                 // 3. 将凭证发送到服务器完成认证
+                val rawJson = """{
+                    "credential": ${credential.authenticationResponseJson},
+                    "requestId": "${startResponse.body()!!.requestId}"
+                }"""
+                val requestBody = rawJson.toRequestBody("application/json".toMediaType())
                 val finishResponse = ApiClient.passkeysApi.finishAuthentication(
-                    AuthenticationFinishRequest(
-                        credential = credential.authenticationResponseJson
-                    )
+                    requestBody
                 )
                 
                 if (!finishResponse.isSuccessful || finishResponse.body()?.success != true) {
@@ -185,6 +200,7 @@ class PasskeysManager(private val context: Context) {
                 Result.success("登录成功！用户: ${userData.username} (${userData.displayName})")
                 
             } catch (e: Exception) {
+                Log.e("TAG使用通行密钥登录失败", "authenticate: $e")
                 Result.failure(e)
             }
         }

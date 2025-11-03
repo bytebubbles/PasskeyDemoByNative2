@@ -31,8 +31,15 @@ interface PasskeysApiService {
     
     @POST("passkeys/authenticate/finish")
     suspend fun finishAuthentication(
-        @Body request: AuthenticationFinishRequest
+        @Body body: RequestBody
     ): Response<AuthenticationFinishResponse>
+
+//    @POST("passkeys/authenticate/finish")
+//    suspend fun finishAuthentication(
+//        @Body request: AuthenticationFinishRequest
+//    ): Response<AuthenticationFinishResponse>
+//
+//
 }
 
 // 请求和响应数据类
@@ -64,7 +71,8 @@ data class AuthenticationStartRequest(
 
 data class AuthenticationStartResponse(
     val success: Boolean,
-    val options: JsonObject // JSON 对象
+    val options: JsonObject, // JSON 对象
+    val requestId: String,
 )
 
 data class AuthenticationFinishRequest(
